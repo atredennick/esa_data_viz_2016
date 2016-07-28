@@ -49,6 +49,7 @@ knit_hooks$set(inline = function(x) {
 % --------------------------------------------------------------
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 % \SweaveOpts{concordance=TRUE} % deprecated
 <<load, echo=FALSE, results='hide', warning=FALSE, message=FALSE>>=
 require(ggplot2)
@@ -57,7 +58,7 @@ require(plyr)
 @ 
 \title{Data Visualization Using R \& ggplot2}
 \author{Naupaka Zimmerman (@naupakaz) \linebreak Andrew Tredennick (@ATredennick) \linebreak \linebreak Hat tip to Karthik Ram (@\_inundata) for original slides \linebreak}
-\date{August 9, 2015}
+\date{August 7, 2016}
 \maketitle
 
 % --------------------------------------------------------------

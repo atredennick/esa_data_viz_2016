@@ -52,7 +52,7 @@ If you're already familiar with `Git`, then simply clone this repo. If you're no
 
 *Please wait until Saturday afternoon to this so you are able to download the latest changes. Otherwise do another git pull or replace your downloaded copy with a newer one.*
 
-![](how_to_clone.png)
+![](how_to_clone_new.png)
 
 If you're having any trouble with these steps please drop us an [email](mailto:atredenn@gmail.com). We'll also strive to have local copies if you forget to install any of these tools.
 

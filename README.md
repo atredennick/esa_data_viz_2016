@@ -29,18 +29,9 @@ If you don't already have R set up with a suitable code editor, we recommend dow
 
 ```coffee
 install.packages("ggplot2", dependencies = TRUE)
-install.packages("plyr")
 install.packages("ggthemes")
-install.packages("reshape2")
-install.packages("gridExtra")
-install.packages("devtools")
-install.packages('cshapes')
-# Then a few packages to acquire data from the web to visualize
-install.packages("rfisheries")
-install.packages("rgbif")
-install.packages("taxize")
-# optional
-devtools::install_github("ropensci/rWBclimate")
+install.packages("tidyr")
+install.packages("dplyr")
 ```
 
 You will want to copy and paste the above into the "Console" of RStudio, like below. After copying and pasting, simply hit 'enter', and you will see a bunch of text letting you know that they are being installed.

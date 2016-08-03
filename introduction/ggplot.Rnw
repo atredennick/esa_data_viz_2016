@@ -1,14 +1,15 @@
-% Slides for WK-10 ``Data Visualization Using R''
-% Ecological Society of America meeting
-% August 2014 - Sacramento, CA
-%
 % Original slides by: Karthik Ram, karthik.ram@gmail.com
 % Modified by: Naupaka Zimmerman, naupaka@gmail.com
 % Licence, CC-BY 4.0
 
 \documentclass{beamer}
+\let\Tiny=\tiny
+\hfuzz=\maxdimen
+\tolerance=10000
+\hbadness=10000
 \usepackage{listings}
-\usepackage{inconsolata}
+% \usepackage{inconsolata}
+\usepackage[T1]{fontenc}
 \setbeamertemplate{frametitle}[default][center]
 \usepackage{url}
 \usepackage{color}
@@ -34,7 +35,7 @@
 
 % Setting up some knitr options
 <<setup, include=FALSE>>=
-opts_chunk$set(cache=TRUE, message=FALSE)
+opts_chunk$set(cache = TRUE, message = FALSE)
 # smaller font size for chunks
 opts_chunk$set(size = 'footnotesize')
 options(width = 60)
@@ -49,16 +50,15 @@ knit_hooks$set(inline = function(x) {
 % --------------------------------------------------------------
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
 % \SweaveOpts{concordance=TRUE} % deprecated
 <<load, echo=FALSE, results='hide', warning=FALSE, message=FALSE>>=
-require(ggplot2)
-require(reshape2)
-require(plyr)
+require("ggplot2")
+require("tidyr")
+require("dplyr")
 @ 
 \title{Data Visualization Using R \& ggplot2}
-\author{Naupaka Zimmerman (@naupakaz) \linebreak Andrew Tredennick (@ATredennick) \linebreak \linebreak Hat tip to Karthik Ram (@\_inundata) for original slides \linebreak}
-\date{August 7, 2016}
+% \author{Naupaka Zimmerman (@naupakaz) \linebreak \linebreak Hat tip to Karthik Ram (@\_inundata) and Andrew Tredennick (@ATredennick) for slides}
+\date{January 24, 2016}
 \maketitle
 
 % --------------------------------------------------------------
@@ -68,36 +68,28 @@ require(plyr)
 Install some packages
 <<installation, tidy=FALSE, echo=TRUE, eval=FALSE>>=
 install.packages("ggplot2", dependencies = TRUE)
-install.packages("plyr")
 install.packages("ggthemes")
-install.packages("reshape2")
-# for some of the examples towards the end:
-install.packages("gridExtra")
-install.packages("devtools")
-# Then a few packages to acquire data from the web to visualize
-install.packages("rfisheries")
-install.packages("rgbif")
-install.packages("taxize")
-# optional
-install_github("rWBclimate", "ropensci")
+install.packages("tidyr")
+install.packages("dplyr")
 @
 \end{frame}
 
 
 \begin{frame}[fragile]
 \frametitle{1 minute}
-<<gapminder, tidy=FALSE, echo=FALSE, fig.width=6, fig.height=5, out.width='.75\\linewidth', fig.align='center'>>=
-library(ggplot2)
-library(gapminder)
+<<gapminder, tidy=FALSE, echo=FALSE, fig.width=8, fig.height=6, out.width='.75\\linewidth', fig.align='center'>>=
+library("ggplot2")
+library("gapminder")
 
-ggplot(gapminder, aes(x=gdpPercap, y=lifeExp))+
-  geom_point(shape=1, aes(color=continent))+
-  stat_smooth(method="lm", size=1, color="black")+
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(shape = 1, aes(color = continent)) +
+  stat_smooth(method = "lm", size = 1, color = "black") +
   scale_x_log10() + 
   xlab("Per Capita GDP") + 
-  ylab("Life Expectancy (yrs)")+
-  facet_wrap(~continent)+
-  theme_bw() + guides(color=FALSE)
+  ylab("Life Expectancy (yrs)") +
+  facet_wrap(~continent, scales = "free") +
+  theme_bw() + 
+  guides(color = FALSE)
 @
 \end{frame}
 
@@ -105,66 +97,86 @@ ggplot(gapminder, aes(x=gdpPercap, y=lifeExp))+
 \begin{frame}[fragile]
 \frametitle{}
 <<gapminder2, tidy=FALSE, echo=TRUE, eval=FALSE>>=
-ggplot(gapminder, aes(x=gdpPercap, y=lifeExp))+
-  geom_point(shape=1, aes(color=continent))+
-  stat_smooth(method="lm", size=1, color="black")+
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(shape = 1, aes(color = continent)) +
+  stat_smooth(method = "lm", size = 1, color = "black") +
   scale_x_log10() + 
   xlab("Per Capita GDP") + 
-  ylab("Life Expectancy (yrs)")+
-  facet_wrap(~continent)+
+  ylab("Life Expectancy (yrs)") +
+  facet_wrap(~continent, scales = "free") +
   theme_bw() + 
   guides(color=FALSE)
 @
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{~30 minutes}
-<<gapminder3, tidy=FALSE, echo=FALSE, fig.width=6, fig.height=5, out.width='.75\\linewidth', fig.align='center'>>=
-library(scales)
+\frametitle{30 minutes}
+<<gapminder3, tidy=FALSE, echo=FALSE, eval = FALSE, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.align='center'>>=
+library("scales")
+library("gapminder")
 conts <- unique(gapminder[,"continent"])
 cols <- scales::hue_pal()(length(conts))
-par(mfrow=c(2,3))
-counter<-1
-for(i in conts){
-  plot(gapminder[which(gapminder$continent==i),"gdpPercap"],
-       gapminder[which(gapminder$continent==i),"lifeExp"], col=cols[counter],
-       xlab="Per Capita GDP", ylab="Life Expectancy (yrs)",
-       main=i, las=1, log="x")
-  fit <- lm(gapminder[which(gapminder$continent==i),"lifeExp"]~log(gapminder[which(gapminder$continent==i),"gdpPercap"]))
+par(mfrow = c(2,3))
+counter <- 1
+for (i in conts) {
+  plot(gapminder[which(gapminder$continent == i), "gdpPercap"],
+       gapminder[which(gapminder$continent == i), "lifeExp"], col = cols[counter],
+       xlab = "Per Capita GDP", ylab = "Life Expectancy (yrs)",
+       main = i, las = 1, log = "x")
+  fit <- lm(gapminder[which(gapminder$continent == i), "lifeExp"] ~ log(gapminder[which(gapminder$continent == i), "gdpPercap"]))
   pred <- predict(fit, interval = "confidence")
-  lines(sort(gapminder[which(gapminder$continent==i),"gdpPercap"]), sort(pred[,1]))
-  lines(sort(gapminder[which(gapminder$continent==i),"gdpPercap"]), sort(pred[,2]), lty=2)
-  lines(sort(gapminder[which(gapminder$continent==i),"gdpPercap"]), sort(pred[,3]), lty=2)
-  counter<-counter+1
+  lines(sort(gapminder[which(gapminder$continent == i), "gdpPercap"]), sort(pred[,1]))
+  lines(sort(gapminder[which(gapminder$continent == i), "gdpPercap"]), sort(pred[,2]), lty = 2)
+  lines(sort(gapminder[which(gapminder$continent == i), "gdpPercap"]), sort(pred[,3]), lty = 2)
+  counter <- counter + 1
 }
 @
+\begin{center}
+\includegraphics[scale=0.5]{images/base_continents_plot.png}
+\end{center}
 \end{frame}
 
 
 \begin{frame}[fragile]
 \frametitle{}
 <<gapminder4, tidy=FALSE, echo=TRUE, eval=FALSE>>=
-library(scales)
-conts <- unique(gapminder[,"continent"])
-cols <- scales::hue_pal()(length(conts))
-par(mfrow=c(2,3))
-counter<-1
-for(i in conts){
-  plot(gapminder[which(gapminder$continent==i),"gdpPercap"],
-       gapminder[which(gapminder$continent==i),"lifeExp"], col=cols[counter],
-       xlab="Per Capita GDP", ylab="Life Expectancy (yrs)",
-       main=i, las=1, log="x")
-  fit <- lm(gapminder[which(gapminder$continent==i),"lifeExp"]~
-              log(gapminder[which(gapminder$continent==i),"gdpPercap"]))
-  pred <- predict(fit, interval = "confidence")
-  lines(sort(gapminder[which(gapminder$continent==i),"gdpPercap"]), 
-        sort(pred[,1]))
-  lines(sort(gapminder[which(gapminder$continent==i),"gdpPercap"]), 
-        sort(pred[,2]), lty=2)
-  lines(sort(gapminder[which(gapminder$continent==i),"gdpPercap"]),
-        sort(pred[,3]), lty=2)
-  counter<-counter+1
-}
+# library("scales")
+# conts <- unique(gapminder[,"continent"])
+# cols <- scales::hue_pal()(length(conts))
+# par(mfrow = c(2,3))
+# counter<-1
+# for (i in conts) {
+#   plot(gapminder[which(gapminder$continent == i), 
+#   			   "gdpPercap"],
+#        gapminder[which(gapminder$continent == i), 
+#        		  "lifeExp"], 
+#   	   col = cols[counter],
+#        xlab = "Per Capita GDP", 
+#		 ylab = "Life Expectancy (yrs)",
+#        main = i, las = 1, log = "x")
+#   fit <- lm(gapminder[which(gapminder$continent == i),
+#   					"lifeExp"] ~ 
+@
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{but wait there's more}
+<<gapminder5, tidy=FALSE, echo=TRUE, eval=FALSE>>=
+#       log(gapminder[which(gapminder$continent == i),
+#       			  "gdpPercap"]))
+#   pred <- predict(fit, interval = "confidence")
+#   lines(sort(gapminder[which(gapminder$continent == i), 
+#   					 "gdpPercap"]), 
+#         sort(pred[,1]))
+#   lines(sort(gapminder[which(gapminder$continent == i), 
+#   					 "gdpPercap"]), 
+#         sort(pred[,2]), lty = 2)
+#   lines(sort(gapminder[which(gapminder$continent == i), 
+#   					 "gdpPercap"]),
+#         sort(pred[,3]), lty = 2)
+#   counter <- counter + 1
+# }
+
 @
 \end{frame}
 
@@ -248,71 +260,22 @@ head(iris)
 
 % --------------------------------------------------------------
 
+
 \begin{frame}[fragile]
-\frametitle{\texttt{plyr} and \texttt{reshape} are key for using \texttt{R}}
-These two packages are the swiss army knives of \texttt{R}.
-\begin{itemize}
-\item \texttt{plyr}
-    \begin{enumerate}
-    \item ddply (data frame to data frame ply)
-        \begin{enumerate}
-        \item split
-        \item apply
-        \item combine
-        \end{enumerate}
-    \item llply (list to list ply)
-    \item join
-    \end{enumerate}
-\end{itemize}
+\frametitle{\texttt{tidyr}}
+Help your data play nice with \texttt{ggplot}.
 \end{frame}
 
 % --------------------------------------------------------------
 
 \begin{frame}[fragile]
-\frametitle{\texttt{plyr}}
-<<plyrexample , fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold',  tidy=FALSE>>=
+\frametitle{\texttt{tidyr}}
+<<gatherexample, tidy=FALSE>>=
 iris[1:2, ]
-# Note the use of the '.' function to allow 'Species' to be used 
-# without quoting
-ddply(iris, .(Species), summarize, 
-      mean.Sep.Wid = mean(Sepal.Width, na.rm = TRUE))
-@
-\end{frame}
-
-% --------------------------------------------------------------
-
-
-\begin{frame}[fragile]
-\frametitle{\texttt{plyr} and \texttt{reshape} are key for using \texttt{R}}
-These two packages are the swiss army knives of \texttt{R}.
-\begin{itemize}
-    \item \texttt{reshape}
-    \begin{enumerate}
-    \item melt
-    \item dcast (data frame output)
-    \item acast (vector/matrix/array output)
-    \end{enumerate}
-\end{itemize}
-\end{frame}
-
-% --------------------------------------------------------------
-
-\begin{frame}[fragile]
-\frametitle{\texttt{reshape2}}
-<<reshapeexample , fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold',  tidy=FALSE>>=
-iris[1:2, ]
-df  <- melt(iris, id.vars = "Species")
+library("tidyr")
+df <- gather(iris, key = flower_attribute, value = measurement,
+			 -Species)
 df[1:2, ]
-@
-\end{frame}
-
-% --------------------------------------------------------------
-
-\begin{frame}[fragile]
-\frametitle{\texttt{reshape2}}
-<<reshapeexample2 , fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold',  tidy=FALSE>>=
-df[1:2, ]
-dcast(df, Species ~ variable, mean)
 @
 \end{frame}
 
@@ -357,7 +320,8 @@ dcast(df, Species ~ variable, mean)
 \begin{frame}[fragile]
 \frametitle{Let's try an example}
 <<data_summary, echo=TRUE,  tidy=FALSE>>=
-myplot <- ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width))
+myplot <- ggplot(data = iris, aes(x = Sepal.Length, 
+			y = Sepal.Width))
 summary(myplot)
 @
 \end{frame}
@@ -398,11 +362,11 @@ summary(myplot)
 
 \begin{frame}[fragile]
 \frametitle{Basic structure}
-<<first_plotb , eval=FALSE, tidy=FALSE>>=
+<<first_plotb, eval=FALSE, tidy=FALSE>>=
 ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width))
     + geom_point()
-
-myplot <- ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width))
+myplot <- ggplot(data = iris, aes(x = Sepal.Length, 
+				y = Sepal.Width))
 myplot + geom_point()
 @
 \begin{itemize}
@@ -427,7 +391,7 @@ myplot + geom_point()
 
 \begin{frame}[fragile]
 \frametitle{Let's try an example}
-<<first_plot , fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
+<<first_plot, fig.width=5, fig.height=3.5, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
 ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
     geom_point()
 @
@@ -437,7 +401,7 @@ ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
 
 \begin{frame}[fragile]
 \frametitle{Changing the aesthetics of a geom: \\Increase the size of points}
-<<first_plot_size , fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
+<<first_plot_size, fig.width=5, fig.height=3.5, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
 ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
     geom_point(size = 3)
 @
@@ -447,8 +411,9 @@ ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
 
 \begin{frame}[fragile]
 \frametitle{Changing the aesthetics of a geom: \\Add some color}
-<<first_plot_color , fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
-ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
+<<first_plot_color, fig.width=5, fig.height=3.5, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
+ggplot(iris, aes(Sepal.Length, Sepal.Width, 
+		color = Species)) +
     geom_point(size = 3)
 @
 \end{frame}
@@ -457,7 +422,7 @@ ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
 
 \begin{frame}[fragile]
 \frametitle{Changing the aesthetics of a geom: \\Differentiate points by shape}
-<<first_plot_shape , fig.width=6, fig.height=3.5, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
+<<first_plot_shape, fig.width=5, fig.height=3.5, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
 ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
     geom_point(aes(shape = Species), size = 3)
 # Why aes(shape = Species)?
@@ -474,9 +439,10 @@ d2 <- diamonds[sample(1:dim(diamonds)[1], 1000), ]
 @
 Then generate this plot below.
 
-<<ex1, echo = FALSE, out.width='.75\\linewidth', fig.height=4, fig.align='center'>>=
+<<ex1, echo = FALSE, out.width='.75\\linewidth', fig.height=4.5, fig.align='center'>>=
 d2 <- diamonds[sample(1:dim(diamonds)[1], 1000), ]
-ggplot(d2, aes(carat, price, color = color)) + geom_point() + theme_gray()
+ggplot(d2, aes(carat, price, color = color)) + 
+	geom_point() + theme_gray()
 @
 \end{frame}
 
@@ -518,7 +484,7 @@ ggplot(d2, aes(carat, price, color = color)) + geom_point() + theme_gray()
 \begin{frame}[fragile]
 \frametitle{Built-in stat example: Boxplots}
 See \texttt{?geom\_boxplot} for list of options
-<<boxplots1 , fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
+<<boxplots1, fig.width=4, fig.height=3, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
 library(MASS)
 ggplot(birthwt, aes(factor(race), bwt)) + geom_boxplot()
 @
@@ -529,7 +495,8 @@ ggplot(birthwt, aes(factor(race), bwt)) + geom_boxplot()
 \begin{frame}[fragile]
 \frametitle{Built-in stat example: Boxplots}
 <<boxplots2, echo=TRUE, tidy=FALSE>>=
-myplot <- ggplot(birthwt, aes(factor(race), bwt)) + geom_boxplot()
+myplot <- ggplot(birthwt, aes(factor(race), bwt)) + 
+	geom_boxplot()
 summary(myplot)
 @
 \end{frame}
@@ -654,7 +621,7 @@ scale_fill_manual(values = c("color1", "color2"))
 \begin{frame}[fragile]
 \frametitle{The RColorBrewer package}
 <<color_list, eval = FALSE, fig.width=4, fig.height=5, out.width='.75\\linewidth'>>=
-library(RColorBrewer)
+library("RColorBrewer")
 display.brewer.all()
 @
 \begin{center}
@@ -666,9 +633,20 @@ display.brewer.all()
 
 \begin{frame}[fragile]
 \frametitle{Using a color brewer palette}
-<<barcolors, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
-df  <- melt(iris, id.vars = "Species")
-ggplot(df, aes(Species, value, fill = variable)) +
+<<gather_barcolors, out.width='.75\\linewidth', tidy=FALSE>>=
+library("RColorBrewer")
+df <- gather(iris, key = flower_attribute, 
+			 value = measurement, -Species)
+df[1:2,]
+@
+\end{frame}
+
+% --------------------------------------------------------------
+
+\begin{frame}[fragile]
+\frametitle{Using a color brewer palette}
+<<barcolors, fig.width=4, fig.height=3, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
+ggplot(df, aes(Species, measurement, fill = flower_attribute)) +
     geom_bar(stat = "identity", position = "dodge") +
     scale_fill_brewer(palette = "Set1")
 @
@@ -678,7 +656,7 @@ ggplot(df, aes(Species, value, fill = variable)) +
 
 \begin{frame}[fragile]
 \frametitle{Manual color scale}
-<<facetgridcolors, eval = TRUE, fig.width=4, fig.height=3, out.width='.75\\linewidth', fig.align='center', tidy=FALSE>>=
+<<facetgridcolors, eval = TRUE, fig.width=4, fig.height=2.75, out.width='.75\\linewidth', fig.align='center', tidy=FALSE>>=
 ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
     geom_point() +
     facet_grid(Species ~ .) +
@@ -802,8 +780,8 @@ colour = "black")
 % --------------------------------------------------------------
 
 \begin{frame}[fragile]
-<<linea , fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
-climate <- read.csv("../data/climate.csv", header = T)
+<<linea, fig.width=7, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
+climate <- read.csv("../data/climate.csv", header = TRUE)
 ggplot(climate, aes(Year, Anomaly10y)) +
     geom_line()
 @
@@ -822,7 +800,7 @@ ggplot(climate, aes(Year, Anomaly10y)) +
 
 \begin{frame}[fragile]
 We can also plot confidence regions
-<<lineb, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
+<<lineb, fig.width=7, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
 ggplot(climate, aes(Year, Anomaly10y)) +
     geom_ribbon(aes(ymin = Anomaly10y - Unc10y,
         ymax = Anomaly10y + Unc10y),
@@ -837,15 +815,14 @@ ggplot(climate, aes(Year, Anomaly10y)) +
 \frametitle{Exercise 2}
 \begin{itemize}
 \item Modify the previous plot and change it such that there are three lines instead of one with a confidence band.
-<<ex2, echo = FALSE, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.align='center', fig.show='hold'>>=
+\end{itemize}
+<<ex2, echo = FALSE, fig.width=7, fig.height=4, out.width='.75\\linewidth', fig.align='center', fig.show='hold'>>=
 cplot <- ggplot(climate, aes(Year, Anomaly10y))
 cplot <- cplot + geom_line(size = 0.7, color = "black")
 cplot <- cplot + geom_line(aes(Year, Anomaly10y + Unc10y), linetype = "dashed", size = 0.7, color = "red")
 cplot <- cplot + geom_line(aes(Year, Anomaly10y - Unc10y), linetype = "dashed", size = 0.7, color = "red")
 cplot + theme_gray()
 @
-
-\end{itemize}
 \end{frame}
 
 % --------------------------------------------------------------
@@ -860,16 +837,19 @@ cplot + theme_gray()
 \begin{frame}[fragile]
 <<barone, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
 ggplot(iris, aes(Species, Sepal.Length)) +
-geom_bar(stat = "identity")
+	geom_bar(stat = "identity")
+@
+<<bartwopointfive, tidy=FALSE, echo = FALSE>>=
+df <- gather(iris, key = flower_attribute, 
+			 value = measurement, -Species)
 @
 \end{frame}
 
 % --------------------------------------------------------------
 
 \begin{frame}[fragile]
-<<bartwo, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
-df  <- melt(iris, id.vars = "Species")
-ggplot(df, aes(Species, value, fill = variable)) +
+<<bartwo, fig.width=4, fig.height=3.5, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
+ggplot(df, aes(Species, measurement, fill = flower_attribute)) +
     geom_bar(stat = "identity")
 @
 \end{frame}
@@ -878,8 +858,8 @@ ggplot(df, aes(Species, value, fill = variable)) +
 % http://stackoverflow.com/questions/11604070/issue-with-ggplot2-geom-bar-and-position-dodge-stacked-has-correct-y-values
 
 \begin{frame}[fragile]
-<<barthree, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
-ggplot(df, aes(Species, value, fill = variable)) +
+<<barthree, fig.width=4, fig.height=3.5, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
+ggplot(df, aes(Species, measurement, fill = flower_attribute)) +
     geom_bar(stat = "identity", position = "dodge")
 @
 What's going on with the y axis?
@@ -888,8 +868,8 @@ What's going on with the y axis?
 % --------------------------------------------------------------
 
 \begin{frame}[fragile]
-<<barthree2, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
-ggplot(df, aes(Species, value, fill = variable)) + 
+<<barthree2, fig.width=4, fig.height=3.5, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
+ggplot(df, aes(Species, measurement, fill = flower_attribute)) + 
     geom_bar(stat = "identity", position="dodge", color="black")
 @
 \end{frame}
@@ -899,9 +879,9 @@ ggplot(df, aes(Species, value, fill = variable)) +
 \begin{frame}[fragile]
 \frametitle{Exercise 3}
 Using the d2 dataset you created earlier, generate this plot below. Take a quick look at the data first to see if it needs to be binned.
-<<ex3, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', echo = FALSE>>=
+<<ex3, fig.width=5, fig.height=2.5, fig.show='hold', fig.align='center', echo = FALSE>>=
 ggplot(d2, aes(clarity, fill = cut)) +
-    geom_bar(position = "dodge",stat = "bin") + theme_gray()
+    geom_bar(position = "dodge", stat = "count") + theme_gray()
 @
 \end{frame}
 
@@ -910,24 +890,22 @@ ggplot(d2, aes(clarity, fill = cut)) +
 \begin{frame}[fragile]
 \frametitle{Exercise 4}
 \begin{itemize}
-\item Use \texttt{plyr} to calculate the mean and standard deviation of petal length by species.\\
-<<ex5.1, echo = TRUE, warning = FALSE, fig.width=5, fig.height=3, out.width='.5\\linewidth', fig.align='center', fig.show='hold'>>=
-agg <- ddply(iris, .(Species), summarise,
-             mean.petal.length = mean(Petal.Length),
-             sd.petal.length = sd(Petal.Length))
-?geom_errorbar()
+\item Use \texttt{dplyr} to calculate the mean and standard deviation of petal length by species.\\
+<<ex5.1, echo = TRUE, warning = FALSE, fig.width=5, fig.height=2.5, out.width='.5\\linewidth', fig.align='center', fig.show='hold'>>=
+agg <- iris %>% 
+	group_by(Species) %>%
+	summarise(mean.petal.length = mean(Petal.Length),
+        sd.petal.length = sd(Petal.Length))
+# ?geom_errorbar()
 @
 
 <<ex5, echo = FALSE, warning = FALSE, fig.width=5, fig.height=3, out.width='.75\\linewidth', fig.align='center', fig.show='hold'>>=
-agg <- ddply(iris, .(Species), summarise,
-             mean.petal.length = mean(Petal.Length),
-             sd.petal.length = sd(Petal.Length))
-ggplot(agg, aes(color=Species))+
-  geom_errorbar(aes(x=Species, ymax=mean.petal.length+sd.petal.length, 
-                    ymin=mean.petal.length-sd.petal.length), width=0.2)+
-  geom_point(aes(x=Species, y=mean.petal.length), size=3)+
-  xlab("Species")+
-  ylab("Petal Length")+
+ggplot(agg, aes(color = Species)) +
+  geom_errorbar(aes(x = Species, ymax = mean.petal.length + sd.petal.length, 
+                    ymin = mean.petal.length - sd.petal.length), width = 0.2) +
+  geom_point(aes(x = Species, y = mean.petal.length), size = 3) +
+  xlab("Species") +
+  ylab("Petal Length") +
   theme_bw()
 @
 
@@ -963,7 +941,7 @@ ggplot(clim, aes(Year, Anomaly10y)) + geom_bar(stat = "identity", aes(fill = sig
 
 \begin{frame}[fragile]
 \frametitle{Density plots}
-<<densityone , eval=TRUE, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
+<<densityone, eval=TRUE, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
 ggplot(faithful, aes(waiting)) + geom_density()
 @
 \end{frame}
@@ -972,7 +950,7 @@ ggplot(faithful, aes(waiting)) + geom_density()
 
 \begin{frame}[fragile]
 \frametitle{Density plots}
-<<densityonefove , eval=TRUE, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
+<<densityonefove, eval=TRUE, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center',  tidy=FALSE>>=
 ggplot(faithful, aes(waiting)) +
     geom_density(fill = "blue", alpha = 0.1)
 @
@@ -981,7 +959,7 @@ ggplot(faithful, aes(waiting)) +
 % --------------------------------------------------------------
 
 \begin{frame}[fragile]
-<<densitytwo , , fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
+<<densitytwo, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.show='hold', fig.align='center', tidy=FALSE>>=
 ggplot(faithful, aes(waiting)) +
     geom_line(stat = "density")
 @
@@ -997,7 +975,7 @@ ggplot(faithful, aes(waiting)) +
 % --------------------------------------------------------------
 
 \begin{frame}[fragile]
-<<adding_stats,, eval = TRUE, fig.width=5, fig.height=4, out.width='.75\\linewidth', fig.align='center', tidy=FALSE>>=
+<<adding_stats, eval = TRUE, fig.width=5, fig.height=4, out.width='.75\\linewidth', fig.align='center', tidy=FALSE>>=
 ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
     geom_point(aes(shape = Species), size = 3) +
     geom_smooth(method = "lm")
@@ -1007,7 +985,7 @@ ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
 % --------------------------------------------------------------
 
 \begin{frame}[fragile]
-<<adding_stats2,, eval = TRUE, tidy=FALSE, fig.width=7, fig.height=4, out.width='.75\\linewidth', fig.align='center'>>=
+<<adding_stats2, eval = TRUE, tidy=FALSE, fig.width=7, fig.height=4, out.width='.75\\linewidth', fig.align='center'>>=
 ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
     geom_point(aes(shape = Species), size = 3) +
     geom_smooth(method = "lm") +
@@ -1106,7 +1084,7 @@ library(ggthemes)
 \begin{center}
 <<facet_wrap_theme_exec_royal, eval = TRUE, echo = TRUE, fig.width=6, fig.height=4, out.width='.75\\linewidth', fig.align='center'>>=
 # install.packages('wesanderson')
-library(wesanderson)
+library("wesanderson")
 # display a palette
 wes_palette("Royal1")
 @

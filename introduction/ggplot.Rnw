@@ -50,6 +50,7 @@ knit_hooks$set(inline = function(x) {
 % --------------------------------------------------------------
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 % \SweaveOpts{concordance=TRUE} % deprecated
 <<load, echo=FALSE, results='hide', warning=FALSE, message=FALSE>>=
 require("ggplot2")
@@ -57,8 +58,8 @@ require("tidyr")
 require("dplyr")
 @ 
 \title{Data Visualization Using R \& ggplot2}
-% \author{Naupaka Zimmerman (@naupakaz) \linebreak \linebreak Hat tip to Karthik Ram (@\_inundata) and Andrew Tredennick (@ATredennick) for slides}
-\date{January 24, 2016}
+\author{Naupaka Zimmerman (@naupakaz) \linebreak Andrew Tredennick (@ATredennick) \linebreak \linebreak Hat tip to Karthik Ram (@\_inundata) for original slides \linebreak}
+\date{August 6, 2016}
 \maketitle
 
 % --------------------------------------------------------------
@@ -140,42 +141,41 @@ for (i in conts) {
 \begin{frame}[fragile]
 \frametitle{}
 <<gapminder4, tidy=FALSE, echo=TRUE, eval=FALSE>>=
-# library("scales")
-# conts <- unique(gapminder[,"continent"])
-# cols <- scales::hue_pal()(length(conts))
-# par(mfrow = c(2,3))
-# counter<-1
-# for (i in conts) {
-#   plot(gapminder[which(gapminder$continent == i), 
-#   			   "gdpPercap"],
-#        gapminder[which(gapminder$continent == i), 
-#        		  "lifeExp"], 
-#   	   col = cols[counter],
-#        xlab = "Per Capita GDP", 
-#		 ylab = "Life Expectancy (yrs)",
-#        main = i, las = 1, log = "x")
-#   fit <- lm(gapminder[which(gapminder$continent == i),
-#   					"lifeExp"] ~ 
+conts <- unique(gapminder[,"continent"])
+cols <- scales::hue_pal()(length(conts))
+par(mfrow = c(2,3))
+counter<-1
+for (i in conts) {
+  plot(gapminder[which(gapminder$continent == i), 
+  			   "gdpPercap"],
+       gapminder[which(gapminder$continent == i), 
+       		  "lifeExp"], 
+  	   col = cols[counter],
+       xlab = "Per Capita GDP", 
+		 ylab = "Life Expectancy (yrs)",
+       main = i, las = 1, log = "x")
+  fit <- lm(gapminder[which(gapminder$continent == i),
+  					"lifeExp"] ~ 
 @
 \end{frame}
 
 \begin{frame}[fragile]
 \frametitle{but wait there's more}
 <<gapminder5, tidy=FALSE, echo=TRUE, eval=FALSE>>=
-#       log(gapminder[which(gapminder$continent == i),
-#       			  "gdpPercap"]))
-#   pred <- predict(fit, interval = "confidence")
-#   lines(sort(gapminder[which(gapminder$continent == i), 
-#   					 "gdpPercap"]), 
-#         sort(pred[,1]))
-#   lines(sort(gapminder[which(gapminder$continent == i), 
-#   					 "gdpPercap"]), 
-#         sort(pred[,2]), lty = 2)
-#   lines(sort(gapminder[which(gapminder$continent == i), 
-#   					 "gdpPercap"]),
-#         sort(pred[,3]), lty = 2)
-#   counter <- counter + 1
-# }
+      log(gapminder[which(gapminder$continent == i),
+      			  "gdpPercap"]))
+  pred <- predict(fit, interval = "confidence")
+  lines(sort(gapminder[which(gapminder$continent == i), 
+  					 "gdpPercap"]), 
+        sort(pred[,1]))
+  lines(sort(gapminder[which(gapminder$continent == i), 
+  					 "gdpPercap"]), 
+        sort(pred[,2]), lty = 2)
+  lines(sort(gapminder[which(gapminder$continent == i), 
+  					 "gdpPercap"]),
+        sort(pred[,3]), lty = 2)
+  counter <- counter + 1
+}
 
 @
 \end{frame}

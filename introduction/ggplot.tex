@@ -90,11 +90,12 @@
 % --------------------------------------------------------------
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 % \SweaveOpts{concordance=TRUE} % deprecated
 
 \title{Data Visualization Using R \& ggplot2}
-% \author{Naupaka Zimmerman (@naupakaz) \linebreak \linebreak Hat tip to Karthik Ram (@\_inundata) and Andrew Tredennick (@ATredennick) for slides}
-\date{January 24, 2016}
+\author{Naupaka Zimmerman (@naupakaz) \linebreak Andrew Tredennick (@ATredennick) \linebreak \linebreak Hat tip to Karthik Ram (@\_inundata) for original slides \linebreak}
+\date{August 6, 2016}
 \maketitle
 
 % --------------------------------------------------------------
@@ -163,22 +164,21 @@ Install some packages
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlcom{# library("scales")}
-\hlcom{# conts <- unique(gapminder[,"continent"])}
-\hlcom{# cols <- scales::hue_pal()(length(conts))}
-\hlcom{# par(mfrow = c(2,3))}
-\hlcom{# counter<-1}
-\hlcom{# for (i in conts) \{}
-\hlcom{#   plot(gapminder[which(gapminder$continent == i), }
-\hlcom{#   			   "gdpPercap"],}
-\hlcom{#        gapminder[which(gapminder$continent == i), }
-\hlcom{#        		  "lifeExp"], }
-\hlcom{#   	   col = cols[counter],}
-\hlcom{#        xlab = "Per Capita GDP", }
-\hlcom{#		 ylab = "Life Expectancy (yrs)",}
-\hlcom{#        main = i, las = 1, log = "x")}
-\hlcom{#   fit <- lm(gapminder[which(gapminder$continent == i),}
-\hlcom{#   					"lifeExp"] ~ }
+conts <- \hlkwd{unique}(gapminder[,\hlstr{"continent"}])
+cols <- scales::\hlkwd{hue_pal}()(\hlkwd{length}(conts))
+\hlkwd{par}(mfrow = \hlkwd{c}(2,3))
+counter<-1
+\hlkwd{for} (i in conts) \{
+  \hlkwd{plot}(gapminder[\hlkwd{which}(gapminder$continent == i), 
+  			   \hlstr{"gdpPercap"}],
+       gapminder[\hlkwd{which}(gapminder$continent == i), 
+       		  \hlstr{"lifeExp"}], 
+  	   col = cols[counter],
+       xlab = \hlstr{"Per Capita GDP"}, 
+		 ylab = \hlstr{"Life \hlkwd{Expectancy} (yrs)"},
+       main = i, las = 1, log = \hlstr{"x"})
+  fit <- \hlkwd{lm}(gapminder[\hlkwd{which}(gapminder$continent == i),
+  					\hlstr{"lifeExp"}] ~ 
 \end{alltt}
 \end{kframe}
 \end{knitrout}
@@ -189,20 +189,20 @@ Install some packages
 \begin{knitrout}\footnotesize
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlcom{#       log(gapminder[which(gapminder$continent == i),}
-\hlcom{#       			  "gdpPercap"]))}
-\hlcom{#   pred <- predict(fit, interval = "confidence")}
-\hlcom{#   lines(sort(gapminder[which(gapminder$continent == i), }
-\hlcom{#   					 "gdpPercap"]), }
-\hlcom{#         sort(pred[,1]))}
-\hlcom{#   lines(sort(gapminder[which(gapminder$continent == i), }
-\hlcom{#   					 "gdpPercap"]), }
-\hlcom{#         sort(pred[,2]), lty = 2)}
-\hlcom{#   lines(sort(gapminder[which(gapminder$continent == i), }
-\hlcom{#   					 "gdpPercap"]),}
-\hlcom{#         sort(pred[,3]), lty = 2)}
-\hlcom{#   counter <- counter + 1}
-\hlcom{# \}}
+      \hlkwd{log}(gapminder[\hlkwd{which}(gapminder$continent == i),
+      			  \hlstr{"gdpPercap"}]))
+  pred <- \hlkwd{predict}(fit, interval = \hlstr{"confidence"})
+  \hlkwd{lines}(\hlkwd{sort}(gapminder[\hlkwd{which}(gapminder$continent == i), 
+  					 \hlstr{"gdpPercap"}]), 
+        \hlkwd{sort}(pred[,1]))
+  \hlkwd{lines}(\hlkwd{sort}(gapminder[\hlkwd{which}(gapminder$continent == i), 
+  					 \hlstr{"gdpPercap"}]), 
+        \hlkwd{sort}(pred[,2]), lty = 2)
+  \hlkwd{lines}(\hlkwd{sort}(gapminder[\hlkwd{which}(gapminder$continent == i), 
+  					 \hlstr{"gdpPercap"}]),
+        \hlkwd{sort}(pred[,3]), lty = 2)
+  counter <- counter + 1
+\}
 \end{alltt}
 \end{kframe}
 \end{knitrout}
